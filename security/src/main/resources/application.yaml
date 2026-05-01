@@ -1,0 +1,10 @@
+spring:
+  application:
+    name: security-service # IMPORTANTE: Este nombre debe ser igual al del archivo en GitHub
+  cloud:
+    config:
+      uri: http://localhost:8888 # La dirección de tu Config Server
+      fail-fast: true # Si no encuentra el config server, el micro no arranca (evita errores raros)
+
+# Nota: No pongas aquí la base de datos ni el secreto del JWT,
+# eso va en el repositorio de GitHub.
