@@ -1,0 +1,54 @@
+spring:
+  application:
+    name: auth-service
+  config:
+    import: optional:configserver:http://config-server:8888
+  datasource:
+    url: jdbc:postgresql://localhost:5432/auth
+    username: ${DB_USERNAME:postgres}
+    password: ${DB_PASSWORD:postgres}
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        format_sql: true
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+
+server:
+  port: 8080
+
+eureka:
+  client:
+    service-url:
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
+  instance:
+    prefer-ip-address: true
+
+jwt:
+  secret: ${JWT_SECRET:YWVuc2ltcGxlYXBpc2VjcmV0a2V5Zm9yandlYnRva2VuZm9yandlbmVyYXRlZHRva2VuYXBpc2VjcmV0}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+fittracker:
+  rabbitmq:
+    exchange: fittracker.exchange
+    routing-key: user.created
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: when_authorized
