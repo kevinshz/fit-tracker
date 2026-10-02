@@ -29,3 +29,6 @@ npm-debug.log*
 
 # Repositorio externo (config real vive en kevinshz/config-fit-tracker)
 /config-server/
+
+# Playwright
+test-results/
