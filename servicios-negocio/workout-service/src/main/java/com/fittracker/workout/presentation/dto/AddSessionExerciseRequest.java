@@ -1,0 +1,13 @@
+package com.fittracker.workout.presentation.dto;
+
+import jakarta.validation.constraints.NotNull;
+
+import java.util.UUID;
+
+public record AddSessionExerciseRequest(
+        @NotNull(message = "El ejercicio es obligatorio")
+        UUID exerciseId,
+
+        Integer plannedSets
+) {
+}
