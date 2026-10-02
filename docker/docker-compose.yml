@@ -1,0 +1,233 @@
+services:
+  postgresql:
+    image: postgres:15
+    container_name: postgresql
+    environment:
+      POSTGRES_DB: auth
+      POSTGRES_USER: ${POSTGRESQL_DB_USERNAME}
+      POSTGRES_PASSWORD: ${POSTGRESQL_DB_PASSWORD}
+    ports:
+      - "${POSTGRESQL_DB_PORT}:5432"
+    volumes:
+      - postgres:/var/lib/postgresql/data
+      - ./initdb:/docker-entrypoint-initdb.d:ro
+    networks:
+      - microservices
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  discovery-server:
+    build:
+      context: ..
+      dockerfile: infraestructura/discovery-server/Dockerfile
+    container_name: discovery-server
+    ports:
+      - "${EUREKA_SERVER_PORT}:8761"
+    networks:
+      - microservices
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8761/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+  config-server:
+    build:
+      context: ..
+      dockerfile: infraestructura/config-server/Dockerfile
+    container_name: config-server
+    ports:
+      - "${CONFIG_SERVER_PORT}:8888"
+    depends_on:
+      discovery-server:
+        condition: service_healthy
+    networks:
+      - microservices
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8888/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+
+  auth-service:
+    build:
+      context: ..
+      dockerfile: servicios-negocio/auth-service/Dockerfile
+    container_name: auth-service
+    ports:
+      - "${AUTH_SERVER_PORT}:8080"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/auth
+      SPRING_DATASOURCE_USERNAME: ${POSTGRESQL_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRESQL_DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+    networks:
+      - microservices
+
+  user-service:
+    build:
+      context: ..
+      dockerfile: servicios-negocio/user-service/Dockerfile
+    container_name: user-service
+    ports:
+      - "${USER_SERVER_PORT}:8083"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/user
+      SPRING_DATASOURCE_USERNAME: ${POSTGRESQL_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRESQL_DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+    networks:
+      - microservices
+
+  calculator-service:
+    build:
+      context: ..
+      dockerfile: servicios-negocio/calculator-service/Dockerfile
+    container_name: calculator-service
+    ports:
+      - "${CALCULATOR_SERVER_PORT}:8081"
+    environment:
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    networks:
+      - microservices
+
+  routine-service:
+    build:
+      context: ..
+      dockerfile: servicios-negocio/routine-service/Dockerfile
+    container_name: routine-service
+    ports:
+      - "${ROUTINE_SERVER_PORT}:8082"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/routine
+      SPRING_DATASOURCE_USERNAME: ${POSTGRESQL_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRESQL_DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+    networks:
+      - microservices
+
+  workout-service:
+    build:
+      context: ..
+      dockerfile: servicios-negocio/workout-service/Dockerfile
+    container_name: workout-service
+    ports:
+      - "${WORKOUT_SERVER_PORT}:8084"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgresql:5432/workout
+      SPRING_DATASOURCE_USERNAME: ${POSTGRESQL_DB_USERNAME}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRESQL_DB_PASSWORD}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+      postgresql:
+        condition: service_healthy
+    networks:
+      - microservices
+
+  api-gateway:
+    build:
+      context: ..
+      dockerfile: infraestructura/api-gateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "${API_GATEWAY_PORT}:8222"
+    environment:
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+    depends_on:
+      config-server:
+        condition: service_healthy
+      discovery-server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8222/actuator/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 40s
+    networks:
+      - microservices
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    ports:
+      - "4200:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    networks:
+      - microservices
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - microservices
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_running"]
+      interval: 15s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
+volumes:
+  postgres:
+
+networks:
+  microservices:
+    driver: bridge
