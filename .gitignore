@@ -13,7 +13,36 @@ target/
 Thumbs.db
 
 # Env (nunca commitear secrets)
-docker/.env
+.env
+.env.*
+!.env.example
+
+# Credenciales y claves privadas
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.jceks
+*.keystore
+id_rsa*
+id_ed25519*
+*.ppk
+
+# Config local de servicios
+application-local.*
+
+# Logs
+*.log
+logs/
+
+# Temporales de IDE/herramientas
+*.swp
+*.swo
+*~
+.classpath
+.project
+.settings/
 
 # Docker volumes
 postgres/
@@ -30,5 +59,13 @@ npm-debug.log*
 # Repositorio externo (config real vive en kevinshz/config-fit-tracker)
 /config-server/
 
-# Playwright
+# Playwright / testing
 test-results/
+playwright-report/
+blob-report/
+coverage/
+.eslintcache
+
+# JVM crash dumps
+hs_err_pid*
+replay_pid*
