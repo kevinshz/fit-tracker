@@ -1,9 +1,10 @@
 server:
   port: 8222
 
-# Debe coincidir exactamente con jwt.secret de auth-service (misma derivacion: bytes UTF-8)
+# Debe coincidir exactamente con jwt.secret de auth-service (misma derivacion: bytes UTF-8).
+# Obligatorio via JWT_SECRET (sin default).
 jwt:
-  secret: ${JWT_SECRET:YWVuc2ltcGxlYXBpc2VjcmV0a2V5Zm9yandlYnRva2VuZm9yandlbmVyYXRlZHRva2VuYXBpc2VjcmV0}
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
 
 spring:

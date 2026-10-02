@@ -6,7 +6,7 @@ spring:
   datasource:
     url: jdbc:postgresql://localhost:5432/auth
     username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD:postgres}
+    password: ${DB_PASSWORD}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:
@@ -36,7 +36,8 @@ eureka:
     prefer-ip-address: true
 
 jwt:
-  secret: ${JWT_SECRET:YWVuc2ltcGxlYXBpc2VjcmV0a2V5Zm9yandlYnRva2VuZm9yandlbmVyYXRlZHRva2VuYXBpc2VjcmV0}
+  # Obligatorio: sin default (proveniente de variables de entorno)
+  secret: ${JWT_SECRET}
   expiration: ${JWT_EXPIRATION:86400000}
 
 fittracker:
