@@ -1,0 +1,13 @@
+# Excluye artefactos y secretos del contexto de build Docker
+**/target
+**/node_modules
+frontend/dist
+frontend/.angular
+**/.env
+.env
+docker/
+.git/
+.agents/
+.idea/
+**/surefire-reports
+**/*.log

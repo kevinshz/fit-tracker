@@ -1,0 +1,31 @@
+# Build artifacts
+target/
+*.jar
+*.class
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Env (nunca commitear secrets)
+docker/.env
+
+# Docker volumes
+postgres/
+
+# Maven
+.mvn/wrapper/maven-wrapper.jar
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+npm-debug.log*
+
+# Repositorio externo (config real vive en kevinshz/config-fit-tracker)
+config-server/
