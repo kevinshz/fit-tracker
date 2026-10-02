@@ -1,0 +1,246 @@
+@if (loading) {
+  <div class="loading-screen">
+    <div class="spinner-border text-primary" style="width: 3rem; height: 3rem;"></div>
+    <p>Cargando entrenamiento...</p>
+  </div>
+} @else if (activeWorkout) {
+  <!-- ===== HEADER FIJO ===== -->
+  <header class="session-header">
+    <div class="session-header__row">
+      <div class="session-header__title">
+        <h1>{{ activeWorkout.titulo }}</h1>
+        <span class="session-header__badge">{{ activeWorkout.tipo === 'STRENGTH' ? 'Fuerza' : 'Hipertrofia' }}</span>
+      </div>
+      <div class="session-header__stats">
+        <div class="session-header__timer">
+          <i class="fa-regular fa-clock"></i>
+          <span>{{ activeWorkout.timerGlobalSegundos | timer }}</span>
+        </div>
+        <div class="session-header__volume">
+          <i class="fa-solid fa-weight-hanging"></i>
+          <span>{{ activeWorkout.volumenTotalKg | volume }}</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== CONTENIDO SCROLLABLE ===== -->
+  <main class="session-body">
+    @for (exercise of activeWorkout.ejercicios; track exercise.exerciseId; let i = $index) {
+      <div class="exercise-card">
+        <!-- Encabezado ejercicio -->
+        <div class="exercise-card__header">
+          <h3 class="exercise-card__name">{{ exercise.nombre }}</h3>
+          <div class="exercise-card__actions">
+            <button class="btn-icon" (click)="toggleNotas(i)"
+                    [class.btn-icon--active]="exercise.showNotas"
+                    title="Notas del ejercicio">
+              <i class="fa-solid fa-pen-to-square"></i>
+            </button>
+            <button class="btn-icon btn-icon--danger" (click)="removeExercise(i)"
+                    title="Eliminar ejercicio">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Textarea de notas (toggle) -->
+        @if (exercise.showNotas) {
+          <div class="exercise-card__notas">
+            <textarea class="notas-input"
+                      placeholder="Notas (ej: sentir el pecho, controlar la bajada...)"
+                      [value]="exercise.notas"
+                      (input)="onNotasChange(i, $event)"
+                      rows="2"></textarea>
+          </div>
+        }
+
+        <!-- Tabla de series -->
+        <div class="set-table">
+          <!-- Headers -->
+          <div class="set-table__header">
+            <span class="col col-set">SET</span>
+            <span class="col col-anterior">
+              <span class="zone-label zone-label--ref">REFERENCIA</span>
+              ANTERIOR
+            </span>
+            <span class="col col-inputs">
+              <span class="zone-label zone-label--exec">TU EJECUCION</span>
+              KG &times; REPS &middot; RIR
+            </span>
+            <span class="col col-done"></span>
+          </div>
+
+          <!-- Filas de series -->
+          @for (set of exercise.sets; let j = $index; track j) {
+            <div class="set-row" [class.set-row--completed]="set.completada">
+              <!-- Numero de serie -->
+              <span class="col col-set">
+                <span class="set-row__number">{{ j + 1 }}</span>
+              </span>
+
+              <!-- ANTERIOR: referencia, solo lectura -->
+              <span class="col col-anterior">
+                <span class="set-row__previous">
+                  {{ set.rendimientoAnterior || '—' }}
+                </span>
+              </span>
+
+              <!-- TU EJECUCION: inputs activos -->
+              <div class="col col-inputs">
+                <div class="exec-inputs" [class.exec-inputs--locked]="set.completada">
+                  <div class="exec-field">
+                    <input type="number"
+                           inputmode="decimal"
+                           class="exec-input exec-input--kg"
+                           placeholder="kg"
+                           [value]="set.pesoActual"
+                           (input)="onWeightChange(i, j, $event)"
+                           [disabled]="set.completada">
+                  </div>
+                  <span class="exec-separator">&times;</span>
+                  <div class="exec-field">
+                    <input type="number"
+                           inputmode="numeric"
+                           class="exec-input exec-input--reps"
+                           placeholder="reps"
+                           [value]="set.repsActuales"
+                           (input)="onRepsChange(i, j, $event)"
+                           [disabled]="set.completada">
+                  </div>
+                  <span class="exec-separator">&middot;</span>
+                  <div class="exec-field">
+                    <input type="number"
+                           inputmode="numeric"
+                           class="exec-input exec-input--rir"
+                           placeholder="RIR"
+                           [value]="set.rir"
+                           (input)="onRirChange(i, j, $event)"
+                           [disabled]="set.completada">
+                  </div>
+                </div>
+              </div>
+
+              <!-- Checkbox completar -->
+              <button class="col col-done set-row__check"
+                      [class.set-row__check--active]="set.completada"
+                      (click)="toggleSet(i, j)">
+                @if (set.completada) {
+                  <i class="fa-solid fa-check"></i>
+                } @else {
+                  <i class="fa-regular fa-circle"></i>
+                }
+              </button>
+            </div>
+          }
+        </div>
+
+        <!-- Timer de descanso -->
+        @if (restTimerActive && restTimerExerciseIdx === i) {
+          <div class="rest-timer">
+            <div class="rest-timer__content">
+              <div class="rest-timer__circle">
+                <svg viewBox="0 0 100 100" class="rest-timer__ring">
+                  <circle cx="50" cy="50" r="44" class="rest-timer__track"/>
+                  <circle cx="50" cy="50" r="44" class="rest-timer__progress"
+                          [style.strokeDashoffset]="((90 - restTimerSeconds) / 90) * 276.46"/>
+                </svg>
+                <div class="rest-timer__time">{{ restTimerSeconds | timer }}</div>
+              </div>
+              <span class="rest-timer__label">DESCANSO</span>
+            </div>
+            <button class="btn btn-sm btn-outline-light rest-timer__skip" (click)="skipRest()">
+              Saltar <i class="fa-solid fa-forward"></i>
+            </button>
+          </div>
+        }
+
+        <!-- Boton agregar serie -->
+        <button class="btn btn-add-set" (click)="addSet(i)">
+          <i class="fa-solid fa-plus"></i> Agregar serie
+        </button>
+      </div>
+    }
+
+    <!-- Agregar ejercicio a la sesion -->
+    <button class="btn btn-add-exercise" (click)="openAddExercise()">
+      <i class="fa-solid fa-plus"></i> Agregar ejercicio
+    </button>
+  </main>
+
+  <!-- ===== BOTON FINALIZAR (sticky bottom) ===== -->
+  <footer class="session-footer">
+    <button class="btn btn-finish" (click)="requestFinish()">
+      <i class="fa-solid fa-stop"></i>
+      FINALIZAR ENTRENAMIENTO
+    </button>
+  </footer>
+
+  <!-- ===== MODAL CONFIRMAR FINALIZAR ===== -->
+  @if (showFinishConfirm) {
+    <div class="modal-overlay" (click)="cancelFinish()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <h3>Finalizar entrenamiento?</h3>
+        <p>Tu sesion de <strong>{{ activeWorkout.titulo }}</strong> quedara guardada con {{ activeWorkout.volumenTotalKg | volume }} de volumen.</p>
+        <div class="modal-dialog__actions">
+          <button class="btn btn-outline-secondary" (click)="cancelFinish()">Cancelar</button>
+          <button class="btn btn-danger" (click)="confirmFinish()">Finalizar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===== MODAL AGREGAR EJERCICIO ===== -->
+  @if (showAddExercise) {
+    <div class="modal-overlay" (click)="closeAddExercise()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <h3>Agregar ejercicio</h3>
+        <div class="add-search">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" placeholder="Buscar ejercicio..."
+                 [(ngModel)]="addSearchQuery" (input)="onAddSearch()"
+                 autofocus>
+        </div>
+        <div class="add-results">
+          @if (addSearching) {
+            <div class="text-center py-3"><div class="spinner-border spinner-border-sm text-primary"></div></div>
+          } @else if (!addSearchQuery.trim()) {
+            <p class="add-results__hint">Escribe para buscar ejercicios del catalogo.</p>
+          } @else if (addSearchResults.length === 0) {
+            <p class="add-results__hint">Sin resultados.</p>
+          } @else {
+            @for (result of addSearchResults; track result.id) {
+              <button class="add-result" (click)="addExercise(result)" [disabled]="addingExercise">
+                <span>{{ result.name }}</span>
+                <i class="fa-solid fa-plus"></i>
+              </button>
+            }
+          }
+        </div>
+        <div class="modal-dialog__actions">
+          <button class="btn btn-outline-secondary" (click)="closeAddExercise()">Cerrar</button>
+        </div>
+      </div>
+    </div>
+  }
+
+  <!-- ===== MODAL CONFIRMAR ELIMINAR EJERCICIO ===== -->
+  @if (showRemoveConfirm && exerciseToRemoveIdx >= 0) {
+    <div class="modal-overlay" (click)="cancelRemoveExercise()">
+      <div class="modal-dialog" (click)="$event.stopPropagation()">
+        <h3>Eliminar este ejercicio?</h3>
+        <p>Seguro que deseas eliminar este ejercicio? Perderas las series ya registradas
+          (<strong>{{ exerciseToRemoveName }}</strong>).</p>
+        <div class="modal-dialog__actions">
+          <button class="btn btn-outline-secondary" (click)="cancelRemoveExercise()">Cancelar</button>
+          <button class="btn btn-danger" (click)="confirmRemoveExercise()" [disabled]="removingExercise">
+            @if (removingExercise) {
+              <span class="spinner-border spinner-border-sm me-1"></span>
+            }
+            Eliminar
+          </button>
+        </div>
+      </div>
+    </div>
+  }
+}
