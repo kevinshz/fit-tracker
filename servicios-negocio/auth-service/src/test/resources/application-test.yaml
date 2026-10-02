@@ -1,0 +1,39 @@
+spring:
+  config:
+    import: "optional:"
+  datasource:
+    url: jdbc:h2:mem:testdb;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.H2Dialect
+  flyway:
+    enabled: false
+  rabbitmq:
+    host: localhost
+    port: 5672
+    username: guest
+    password: guest
+  cloud:
+    config:
+      enabled: false
+    discovery:
+      enabled: false
+
+eureka:
+  client:
+    enabled: false
+
+jwt:
+  secret: dGVzdHNlY3JldGtleWZvcmp3dGd2ZXJpZnlzaWduYXR1cmVrZXk=
+  expiration: 3600000
+
+fittracker:
+  rabbitmq:
+    exchange: fittracker.exchange
+    routing-key: user.created
