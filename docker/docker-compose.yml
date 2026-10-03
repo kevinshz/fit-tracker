@@ -187,6 +187,7 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRATION: ${JWT_EXPIRATION}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
+      CONFIG_SERVER_URL: http://config-server:8888
     depends_on:
       config-server:
         condition: service_healthy
