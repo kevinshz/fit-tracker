@@ -8,14 +8,20 @@ spring:
     config:
       server:
         git:
-          uri: https://github.com/kevinshz/config-fit-tracker.git
-          default-label: main
+          # URI y rama del repositorio de configuracion: solo via variables de entorno
+          # (docker/.env para el stack; export en IDE). Sin default: falla rapido si falta.
+          uri: ${CONFIG_GIT_URI}
+          default-label: ${CONFIG_GIT_BRANCH:main}
+          # Clona al arrancar: si el repo no es accesible, el servidor no arranca
+          # y el healthcheck de Docker bloquea el stack (nunca ocultar un Config Server caido).
+          clone-on-start: true
 
-# Eureka va en la RAÍZ del archivo, no dentro de 'spring'
+# Eureka con placeholder: Docker pasa EUREKA_CLIENT_SERVICEURL_DEFAULTZONE
+# (discovery-server:8761); en IDE/local usa localhost:8761.
 eureka:
   client:
     serviceUrl:
-      defaultZone: http://discovery-server:8761/eureka/
+      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
   instance:
     prefer-ip-address: true
 
@@ -23,7 +29,7 @@ management:
   endpoints:
     web:
       exposure:
-        include: "health,info" # Exponemos lo básico para Docker y Eureka
+        include: "health,info" # Exponemos lo basico para Docker y Eureka
   endpoint:
     health:
-      show-details: always # Útil para debug, pero opcional en producción
+      show-details: always # Util para debug, pero opcional en produccion

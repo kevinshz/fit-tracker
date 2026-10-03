@@ -42,6 +42,10 @@ services:
     container_name: config-server
     ports:
       - "${CONFIG_SERVER_PORT}:8888"
+    environment:
+      CONFIG_GIT_URI: ${CONFIG_GIT_URI:?CONFIG_GIT_URI es requerido - definirlo en docker/.env}
+      CONFIG_GIT_BRANCH: ${CONFIG_GIT_BRANCH:-main}
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
     depends_on:
       discovery-server:
         condition: service_healthy
