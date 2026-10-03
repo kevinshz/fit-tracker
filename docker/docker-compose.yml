@@ -72,7 +72,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRESQL_DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRESQL_DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      CONFIG_SERVER_URL: http://config-server:8888
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
     depends_on:
@@ -97,7 +97,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRESQL_DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRESQL_DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      CONFIG_SERVER_URL: http://config-server:8888
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
     depends_on:
@@ -119,7 +119,7 @@ services:
       - "${CALCULATOR_SERVER_PORT}:8081"
     environment:
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      CONFIG_SERVER_URL: http://config-server:8888
     depends_on:
       config-server:
         condition: service_healthy
@@ -140,7 +140,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRESQL_DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRESQL_DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      CONFIG_SERVER_URL: http://config-server:8888
     depends_on:
       config-server:
         condition: service_healthy
@@ -163,7 +163,7 @@ services:
       SPRING_DATASOURCE_USERNAME: ${POSTGRESQL_DB_USERNAME}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRESQL_DB_PASSWORD}
       EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://discovery-server:8761/eureka/
-      SPRING_CONFIG_IMPORT: optional:configserver:http://config-server:8888
+      CONFIG_SERVER_URL: http://config-server:8888
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
     depends_on:
