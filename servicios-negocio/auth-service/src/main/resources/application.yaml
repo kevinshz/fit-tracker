@@ -2,54 +2,7 @@ spring:
   application:
     name: auth-service
   config:
-    import: optional:configserver:http://config-server:8888
-  datasource:
-    url: jdbc:postgresql://localhost:5432/auth
-    username: ${DB_USERNAME:postgres}
-    password: ${DB_PASSWORD}
-    driver-class-name: org.postgresql.Driver
-  jpa:
-    hibernate:
-      ddl-auto: validate
-    show-sql: false
-    properties:
-      hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
-        format_sql: true
-  flyway:
-    enabled: true
-    baseline-on-migrate: true
-  rabbitmq:
-    host: ${RABBITMQ_HOST:localhost}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:guest}
-    password: ${RABBITMQ_PASSWORD:guest}
-
-server:
-  port: 8080
-
-eureka:
-  client:
-    service-url:
-      defaultZone: ${EUREKA_CLIENT_SERVICEURL_DEFAULTZONE:http://localhost:8761/eureka/}
-  instance:
-    prefer-ip-address: true
-
-jwt:
-  # Obligatorio: sin default (proveniente de variables de entorno)
-  secret: ${JWT_SECRET}
-  expiration: ${JWT_EXPIRATION:86400000}
-
-fittracker:
-  rabbitmq:
-    exchange: fittracker.exchange
-    routing-key: user.created
-
-management:
-  endpoints:
-    web:
-      exposure:
-        include: health,info
-  endpoint:
-    health:
-      show-details: when_authorized
+    # Config centralizada en Config Server (datasource, jpa, flyway, rabbitmq, jwt, puerto).
+    # optional: para tests sin Config Server; en Docker la disponibilidad la garantizan
+    # depends_on/healthchecks (nunca usar optional para ocultar un Config Server caido).
+    import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"
