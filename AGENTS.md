@@ -12,7 +12,7 @@ Reactor raiz en `pom.xml` (16 modulos). El paquete base es `com.fittracker.*` (s
 - `testing/e2e-tests`: suite E2E backend contra el stack Docker (gated)
 - `frontend/`: Angular 17 standalone, SCSS, Karma/Jasmine + Playwright
 - `docker/`: `docker-compose.yml`, `.env` (Postgres/JWT/puertos, gitignorado), `initdb/init.sql` (DBs `auth`, `user`, `routine`, `workout`)
-- `config-server/` (raiz): espejos locales de yamls del repo externo — la config real vive en `https://github.com/kevinshz/config-fit-tracker.git`
+- `config-server/` (raiz): clon local de trabajo (gitignored, fuera del build) del repo oficial de configuracion `https://github.com/kevinshz/config-fit-tracker.git`; el Config Server lo clona via `CONFIG_GIT_URI`/`CONFIG_GIT_BRANCH` (docker/.env, requeridas — compose falla con `:?` si faltan)
 
 **OJO**: `auth-service/pom.xml` tiene `parent = spring-boot-starter-parent:3.5.4` (NO hereda el pom raiz) — toda version gestionada (springdoc, messaging-rabbitmq, etc.) debe ir **explicita** ahi.
 
@@ -39,10 +39,10 @@ Stack completo: `docker compose up -d --build` desde `docker/` (11 contenedores)
 
 - Puertos: gateway `:8222`, auth `:8080`, calculator `:8081`, routine `:8082`, user `:8083`, workout `:8084`, eureka `:8761`, config `:8888`, postgres `:5432`, frontend `:4200`
 - Frontend (prod, nginx) proxya `/auth/` y `/api/` a `api-gateway:8222`; `environment.ts` usa `apiBaseUrl: 'http://localhost:8222'` (el browser llama al gateway directo)
-- CORS: `spring.cloud.gateway.globalcors` en `infraestructura/api-gateway/src/main/resources/application.yaml` + `JwtValidationFilter` salta OPTIONS (preflight) — sin esto el frontend no puede llamar al API
+- CORS: `spring.cloud.gateway.globalcors` vive en `config-fit-tracker/api-gateway.yaml` (Config Server) + `JwtValidationFilter` salta OPTIONS (preflight) — sin esto el frontend no puede llamar al API
 - JWT: `sub` = UUID del usuario, claims `userId`, `email`, `roles`. Ambos lados derivan la clave = `jwtSecret.getBytes(UTF_8)`. El gateway valida y propaga `X-User-Id`/`X-User-Email`/`X-User-Roles`; los servicios confian en esos headers. Skip del filtro: `/auth/`, `/actuator/`, `/eureka/`, `/swagger-ui*`, `/v3/api-docs`, `/api-docs/`
-- Rutas gateway (en el yaml local, NO en el repo externo): `/auth/**`, `/calc`es: `/api/v1/calculator/**`, `/api/v1/exercises/**` -> ROUTINE, `/api/v1/users/**` -> USER, `/api/v1/workouts/**` -> WORKOUT, mas 5 rutas `RewritePath` `/api-docs/{svc}/**` para Swagger agregado
-- `spring.cloud.config.enabled: false` en el gateway a proposito: el repo externo `config-fit-tracker` solo tiene `api-gateway.yaml` obsoleto (solo ruta `/auth`) y `security-service.yaml`; si se actualiza el repo, reactivar. Los demas servicios tienen config local y config import `optional:configserver` (los 404 del config server son esperados)
+- Rutas gateway (en `config-fit-tracker/api-gateway.yaml`, servidas por el Config Server): `/auth/**`, `/calc`es: `/api/v1/calculator/**`, `/api/v1/exercises/**` -> ROUTINE, `/api/v1/users/**` -> USER, `/api/v1/workouts/**` -> WORKOUT, mas 5 rutas `RewritePath` `/api-docs/{svc}/**` para Swagger agregado
+- Config centralizada (Spring Cloud Config): los `application.yaml` locales de los 6 clientes (5 servicios + gateway) solo llevan `spring.application.name` + `spring.config.import: "optional:configserver:${CONFIG_SERVER_URL:http://localhost:8888}"`. Del repo remoto vienen: `application.yaml` global (eureka + management), `api-gateway.yaml` (rutas/CORS/springdoc/jwt/puerto) y uno por servicio (datasource/jpa/flyway/rabbitmq/jwt/feign/progression/puertos). Precedencia: env vars > config server > local; los placeholders `${...}` los resuelve el cliente con su entorno (nunca hay secretos en el repo de config). En compose, `depends_on: service_healthy` garantiza el Config Server antes de cada servicio y `clone-on-start` + healthcheck bloquean el stack si el Git no responde — el `optional:` es SOLO para que los tests corran sin Config Server (lo desactivan con `spring.cloud.config.enabled: false`); `discovery-server` lo mantiene desactivado por chicken-egg. Receta IDE: `docker compose up -d postgresql rabbitmq discovery-server config-server` y arrancar el servicio con defaults (puerto 8888 publicado). `application-test.yaml` no se tocaron
 - RabbitMQ: auth publica `user.created` en `fittracker.exchange`; user-service consume `user.created.queue` y crea el perfil (asincrono: `/users/me` puede dar 404/400 los primeros segundos tras registrarse). Workout publica `workout.session.completed`
 - Frontend maneja el evento del perfil con reintentos; el backend E2E reintenta `/users/me` hasta 20s
 
@@ -91,7 +91,6 @@ Stack completo: `docker compose up -d --build` desde `docker/` (11 contenedores)
 
 ## Pendientes conocidos
 
-- Repo externo `kevinshz/config-fit-tracker` desactualizado (empujar `api-gateway.yaml` actual y reactivar config import del gateway)
 - `GlobalExceptionHandler` de `common-exceptions` nunca se registra como `@RestControllerAdvice`
 - Padre de `auth-service` = spring-boot-starter-parent **3.5.4** (resto 3.5.14) — alinear cuando se toque
 - Sin repositorio git todavia
